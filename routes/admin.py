@@ -25,24 +25,31 @@ def monitor_orders():
 @role_required('admin')
 def add_discount():
     data = request.get_json()
-    code = data.get('code', '').strip()
+    # Manual validation for required fields
+    if 'code' not in data or 'percentage' not in data:
+        return jsonify({"message": "Missing required fields"}), 400
+    code = str(data.get('code', '')).strip()
     percentage = data.get('percentage')
     import html
     code = html.escape(code)
-    # Basic checks
-    if not isinstance(code, str) or not code or len(code) > 16:
+    if code == '' or code.isspace() or len(code) > 16:
         return jsonify({"message": "Invalid discount code"}), 400
-    if not isinstance(percentage, (int, float)) or not (0 < percentage <= 100):
+    if percentage is None or not isinstance(percentage, (int, float)) or not (0 < percentage <= 100):
         return jsonify({"message": "Invalid percentage"}), 400
     admin_id = get_jwt_identity()  # Assuming admin is user
     session = Session()
-    discount = Discount(
-        code=code,
-        percentage=percentage,
-        admin_id=admin_id
-    )
-    session.add(discount)
-    session.commit()
+    try:
+        discount = Discount(
+            code=code,
+            percentage=percentage,
+            admin_id=admin_id
+        )
+        session.add(discount)
+        session.commit()
+    except Exception:
+        session.rollback()
+        session.close()
+        return jsonify({"message": "Invalid discount input"}), 400
     session.close()
     return jsonify({"message": "Discount added"})
 

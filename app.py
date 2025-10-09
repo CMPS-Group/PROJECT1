@@ -1,3 +1,4 @@
+from werkzeug.exceptions import UnprocessableEntity
 from flask import Flask, request, jsonify
 from flask_jwt_extended import JWTManager, create_access_token
 from auth import register_user, authenticate_user
@@ -14,9 +15,15 @@ jwt = JWTManager(app)
 Base.metadata.create_all(engine)
 
 # Register blueprints
+# Register blueprints
 app.register_blueprint(buyer_bp, url_prefix='/buyer')
 app.register_blueprint(seller_bp, url_prefix='/seller')
 app.register_blueprint(admin_bp, url_prefix='/admin')
+
+# Global error handler for 422 Unprocessable Entity
+@app.errorhandler(UnprocessableEntity)
+def handle_422(e):
+    return jsonify({"message": "Invalid input"}), 400
 
 @app.route('/register', methods=['POST'])
 def register():
