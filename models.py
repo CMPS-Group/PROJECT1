@@ -1,6 +1,8 @@
 from sqlalchemy import create_engine, Column, Integer, String, Float, ForeignKey, Text
 from sqlalchemy.orm import relationship, sessionmaker, declarative_base
 from werkzeug.security import generate_password_hash, check_password_hash
+from datetime import datetime
+from sqlalchemy import DateTime
 
 Base = declarative_base()
 
@@ -44,6 +46,7 @@ class Order(Base):
     user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
     total = Column(Float, nullable=False)
     status = Column(String(20), default='pending')  # 'pending', 'completed', 'cancelled'
+    created_at = Column(DateTime, default=datetime.utcnow)
 
     user = relationship('User')
     items = relationship('OrderItem')
@@ -67,6 +70,18 @@ class Discount(Base):
     admin_id = Column(Integer, ForeignKey('users.id'), nullable=False)
 
     admin = relationship('User')
+
+class InventoryLog(Base):
+    __tablename__ = 'inventory_logs'
+    id = Column(Integer, primary_key=True)
+    vehicle_id = Column(Integer, ForeignKey('vehicles.id'), nullable=False)
+    user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
+    old_quantity = Column(Integer, nullable=False)
+    new_quantity = Column(Integer, nullable=False)
+    timestamp = Column(DateTime, default=datetime.utcnow)
+
+    vehicle = relationship('Vehicle')
+    user = relationship('User')
 
 # Database setup
 engine = create_engine('sqlite:///ecommerce.db')

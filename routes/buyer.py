@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from models import Session, Vehicle, CartItem, Order, OrderItem, Discount
+from models import Session, Vehicle, CartItem, Order, OrderItem, Discount, InventoryLog
 from auth import role_required
 
 buyer_bp = Blueprint('buyer', __name__)
@@ -92,7 +92,11 @@ def checkout():
         subtotal = item.quantity * vehicle.price
         total += subtotal
         order_items.append(OrderItem(vehicle_id=item.vehicle_id, quantity=item.quantity, price=vehicle.price))
+        old_quantity = vehicle.inventory
         vehicle.inventory -= item.quantity
+        # Log inventory change (user_id is the seller's id)
+        log = InventoryLog(vehicle_id=item.vehicle_id, user_id=vehicle.seller_id, old_quantity=old_quantity, new_quantity=vehicle.inventory)
+        session.add(log)
     total -= total * discount_amount
     order = Order(user_id=user_id, total=total)
     session.add(order)
