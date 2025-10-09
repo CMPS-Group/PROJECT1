@@ -10,17 +10,29 @@ seller_bp = Blueprint('seller', __name__)
 @role_required('seller')
 def add_product():
     data = request.get_json()
-    if not isinstance(data.get('name'), str) or not data['name'].strip() or \
-       not isinstance(data.get('price'), (int, float)) or data['price'] <= 0 or \
-       not isinstance(data.get('inventory'), int) or data['inventory'] < 0:
-        return jsonify({"message": "Invalid input"}), 400
+    name = data.get('name', '').strip()
+    description = data.get('description', '').strip()
+    price = data.get('price')
+    inventory = data.get('inventory')
+    import html
+    name = html.escape(name)
+    description = html.escape(description)
+    # Basic checks
+    if not isinstance(name, str) or not name or len(name) > 64:
+        return jsonify({"message": "Invalid product name"}), 400
+    if not isinstance(description, str) or len(description) > 256:
+        return jsonify({"message": "Invalid product description"}), 400
+    if not isinstance(price, (int, float)) or price <= 0 or price > 100000:
+        return jsonify({"message": "Invalid price"}), 400
+    if not isinstance(inventory, int) or inventory < 0 or inventory > 100000:
+        return jsonify({"message": "Invalid inventory value"}), 400
     user_id = get_jwt_identity()
     session = Session()
     product = Product(
-        name=data['name'].strip(),
-        description=data.get('description', '').strip(),
-        price=data['price'],
-        inventory=data['inventory'],
+        name=name,
+        description=description,
+        price=price,
+        inventory=inventory,
         seller_id=user_id
     )
     session.add(product)
@@ -40,10 +52,30 @@ def edit_product(product_id):
     if not product:
         session.close()
         return jsonify({"message": "Product not found or access denied"}), 404
-    product.name = data.get('name', product.name)
-    product.description = data.get('description', product.description)
-    product.price = data.get('price', product.price)
-    product.inventory = data.get('inventory', product.inventory)
+    name = data.get('name', product.name).strip()
+    description = data.get('description', product.description).strip()
+    price = data.get('price', product.price)
+    inventory = data.get('inventory', product.inventory)
+    import html
+    name = html.escape(name)
+    description = html.escape(description)
+    # Basic checks
+    if not isinstance(name, str) or not name or len(name) > 64:
+        session.close()
+        return jsonify({"message": "Invalid product name"}), 400
+    if not isinstance(description, str) or len(description) > 256:
+        session.close()
+        return jsonify({"message": "Invalid product description"}), 400
+    if not isinstance(price, (int, float)) or price <= 0 or price > 100000:
+        session.close()
+        return jsonify({"message": "Invalid price"}), 400
+    if not isinstance(inventory, int) or inventory < 0 or inventory > 100000:
+        session.close()
+        return jsonify({"message": "Invalid inventory value"}), 400
+    product.name = name
+    product.description = description
+    product.price = price
+    product.inventory = inventory
     session.commit()
     session.close()
     return jsonify({"message": "Product updated"})

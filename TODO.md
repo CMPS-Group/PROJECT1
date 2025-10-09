@@ -24,13 +24,13 @@
 - [x] Create app.py to set up Flask app and register blueprints
 
 ## Testing Tasks
-- [ ] Test seller inventory update endpoint
-- [ ] Test low stock alerts endpoint
-- [ ] Test restock suggestions endpoint
-- [ ] Test admin inventory view endpoint
-- [ ] Test admin inventory logs endpoint
-- [ ] Test checkout with inventory logging
-- [ ] Verify database tables are created correctly
+- [x] Test seller inventory update endpoint
+- [x] Test low stock alerts endpoint
+- [x] Test restock suggestions endpoint
+- [x] Test admin inventory view endpoint
+- [x] Test admin inventory logs endpoint
+- [x] Test checkout with inventory logging
+- [x] Verify database tables are created correctly
 - [x] Set up virtual environment and install dependencies
 - [x] Run the app and perform basic testing (app starts successfully)
 

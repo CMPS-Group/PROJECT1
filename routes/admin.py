@@ -25,11 +25,20 @@ def monitor_orders():
 @role_required('admin')
 def add_discount():
     data = request.get_json()
+    code = data.get('code', '').strip()
+    percentage = data.get('percentage')
+    import html
+    code = html.escape(code)
+    # Basic checks
+    if not isinstance(code, str) or not code or len(code) > 16:
+        return jsonify({"message": "Invalid discount code"}), 400
+    if not isinstance(percentage, (int, float)) or not (0 < percentage <= 100):
+        return jsonify({"message": "Invalid percentage"}), 400
     admin_id = get_jwt_identity()  # Assuming admin is user
     session = Session()
     discount = Discount(
-        code=data['code'],
-        percentage=data['percentage'],
+        code=code,
+        percentage=percentage,
         admin_id=admin_id
     )
     session.add(discount)
@@ -69,8 +78,10 @@ def delete_user(user_id):
 @role_required('admin')
 def update_user_role(user_id):
     data = request.get_json()
-    new_role = data.get('role')
-    if not new_role or new_role not in ['buyer', 'seller', 'admin']:
+    new_role = data.get('role', '').strip().lower()
+    import html
+    new_role = html.escape(new_role)
+    if new_role not in ['buyer', 'seller', 'admin']:
         return jsonify({"message": "Invalid role"}), 400
     session = Session()
     user = session.query(User).filter_by(id=user_id).first()

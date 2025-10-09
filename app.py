@@ -21,7 +21,20 @@ app.register_blueprint(admin_bp, url_prefix='/admin')
 @app.route('/register', methods=['POST'])
 def register():
     data = request.get_json()
-    success, message = register_user(data['username'], data['password'], data['role'])
+    username = data.get('username', '').strip()
+    password = data.get('password', '').strip()
+    role = data.get('role', '').strip().lower()
+    import html
+    username = html.escape(username)
+    role = html.escape(role)
+    # Basic checks
+    if not isinstance(username, str) or not username or len(username) > 32:
+        return jsonify({"message": "Invalid username"}), 400
+    if not isinstance(password, str) or not password or len(password) < 8 or len(password) > 128:
+        return jsonify({"message": "Invalid password"}), 400
+    if role not in {"admin", "seller", "buyer"}:
+        return jsonify({"message": "Invalid role"}), 400
+    success, message = register_user(username, password, role)
     if success:
         return jsonify({"message": message}), 201
     return jsonify({"message": message}), 400
@@ -29,7 +42,16 @@ def register():
 @app.route('/login', methods=['POST'])
 def login():
     data = request.get_json()
-    user = authenticate_user(data['username'], data['password'])
+    username = data.get('username', '').strip()
+    password = data.get('password', '').strip()
+    import html
+    username = html.escape(username)
+    # Basic checks
+    if not isinstance(username, str) or not username or len(username) > 32:
+        return jsonify({"message": "Invalid username"}), 400
+    if not isinstance(password, str) or not password or len(password) < 8 or len(password) > 128:
+        return jsonify({"message": "Invalid password"}), 400
+    user = authenticate_user(username, password)
     if user:
         access_token = create_access_token(identity=user.username)
         return jsonify({"access_token": access_token, "role": user.role}), 200
