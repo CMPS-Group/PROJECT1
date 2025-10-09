@@ -1,39 +1,39 @@
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from models import Session, Product, CartItem, Order, OrderItem, Discount
+from models import Session, Vehicle, CartItem, Order, OrderItem, Discount
 from auth import role_required
 
 buyer_bp = Blueprint('buyer', __name__)
 
-@buyer_bp.route('/products', methods=['GET'])
+@buyer_bp.route('/vehicles', methods=['GET'])
 @jwt_required()
 @role_required('buyer')
-def browse_products():
+def browse_vehicles():
     session = Session()
-    products = session.query(Product).all()
+    vehicles = session.query(Vehicle).all()
     session.close()
     return jsonify([{
-        'id': p.id,
-        'name': p.name,
-        'description': p.description,
-        'price': p.price,
-        'inventory': p.inventory
-    } for p in products])
+        'id': v.id,
+        'name': v.name,
+        'description': v.description,
+        'price': v.price,
+        'inventory': v.inventory
+    } for v in vehicles])
 
 @buyer_bp.route('/cart', methods=['POST'])
 @jwt_required()
 @role_required('buyer')
 def add_to_cart():
     data = request.get_json()
-    if not isinstance(data.get('product_id'), int) or not isinstance(data.get('quantity'), int) or data['quantity'] <= 0:
+    if not isinstance(data.get('vehicle_id'), int) or not isinstance(data.get('quantity'), int) or data['quantity'] <= 0:
         return jsonify({"message": "Invalid input"}), 400
     user_id = get_jwt_identity()
     session = Session()
-    product = session.query(Product).filter_by(id=data['product_id']).first()
-    if not product or product.inventory < data['quantity']:
+    vehicle = session.query(Vehicle).filter_by(id=data['vehicle_id']).first()
+    if not vehicle or vehicle.inventory < data['quantity']:
         session.close()
-        return jsonify({"message": "Invalid product or insufficient inventory"}), 400
-    cart_item = CartItem(user_id=user_id, product_id=data['product_id'], quantity=data['quantity'])
+        return jsonify({"message": "Invalid vehicle or insufficient inventory"}), 400
+    cart_item = CartItem(user_id=user_id, vehicle_id=data['vehicle_id'], quantity=data['quantity'])
     session.add(cart_item)
     session.commit()
     session.close()
@@ -49,16 +49,16 @@ def view_cart():
     cart = []
     total = 0
     for item in items:
-        product = session.query(Product).filter_by(id=item.product_id).first()
-        if product:
+        vehicle = session.query(Vehicle).filter_by(id=item.vehicle_id).first()
+        if vehicle:
             cart.append({
-                'product_id': item.product_id,
-                'name': product.name,
+                'vehicle_id': item.vehicle_id,
+                'name': vehicle.name,
                 'quantity': item.quantity,
-                'price': product.price,
-                'subtotal': item.quantity * product.price
+                'price': vehicle.price,
+                'subtotal': item.quantity * vehicle.price
             })
-            total += item.quantity * product.price
+            total += item.quantity * vehicle.price
     session.close()
     return jsonify({'cart': cart, 'total': total})
 
@@ -85,14 +85,14 @@ def checkout():
             discount_amount = discount.percentage / 100
     order_items = []
     for item in items:
-        product = session.query(Product).filter_by(id=item.product_id).first()
-        if product.inventory < item.quantity:
+        vehicle = session.query(Vehicle).filter_by(id=item.vehicle_id).first()
+        if vehicle.inventory < item.quantity:
             session.close()
-            return jsonify({"message": f"Insufficient inventory for {product.name}"}), 400
-        subtotal = item.quantity * product.price
+            return jsonify({"message": f"Insufficient inventory for {vehicle.name}"}), 400
+        subtotal = item.quantity * vehicle.price
         total += subtotal
-        order_items.append(OrderItem(product_id=item.product_id, quantity=item.quantity, price=product.price))
-        product.inventory -= item.quantity
+        order_items.append(OrderItem(vehicle_id=item.vehicle_id, quantity=item.quantity, price=vehicle.price))
+        vehicle.inventory -= item.quantity
     total -= total * discount_amount
     order = Order(user_id=user_id, total=total)
     session.add(order)
@@ -117,8 +117,8 @@ def get_orders():
     for order in orders:
         items = session.query(OrderItem).filter_by(order_id=order.id).all()
         item_list = [{
-            'product_id': i.product_id,
-            'name': i.product.name,
+            'vehicle_id': i.vehicle_id,
+            'name': i.vehicle.name,
             'quantity': i.quantity,
             'price': i.price
         } for i in items]

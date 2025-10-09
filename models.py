@@ -17,8 +17,8 @@ class User(Base):
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
 
-class Product(Base):
-    __tablename__ = 'products'
+class Vehicle(Base):
+    __tablename__ = 'vehicles'
     id = Column(Integer, primary_key=True)
     name = Column(String(100), nullable=False)
     description = Column(Text)
@@ -32,11 +32,11 @@ class CartItem(Base):
     __tablename__ = 'cart_items'
     id = Column(Integer, primary_key=True)
     user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
-    product_id = Column(Integer, ForeignKey('products.id'), nullable=False)
+    vehicle_id = Column(Integer, ForeignKey('vehicles.id'), nullable=False)
     quantity = Column(Integer, nullable=False)
 
     user = relationship('User')
-    product = relationship('Product')
+    vehicle = relationship('Vehicle')
 
 class Order(Base):
     __tablename__ = 'orders'
@@ -52,12 +52,12 @@ class OrderItem(Base):
     __tablename__ = 'order_items'
     id = Column(Integer, primary_key=True)
     order_id = Column(Integer, ForeignKey('orders.id'), nullable=False)
-    product_id = Column(Integer, ForeignKey('products.id'), nullable=False)
+    vehicle_id = Column(Integer, ForeignKey('vehicles.id'), nullable=False)
     quantity = Column(Integer, nullable=False)
     price = Column(Float, nullable=False)
 
     order = relationship('Order')
-    product = relationship('Product')
+    vehicle = relationship('Vehicle')
 
 class Discount(Base):
     __tablename__ = 'discounts'
