@@ -44,4 +44,4 @@ app.register_blueprint(seller_bp, url_prefix='/seller')
 app.register_blueprint(admin_bp, url_prefix='/admin')
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=True, port=5001)
