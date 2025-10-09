@@ -23,15 +23,19 @@ def authenticate_user(username, password):
         return user
     return None
 
+def get_user_by_username(username):
+    session = Session()
+    user = session.query(User).filter_by(username=username).first()
+    session.close()
+    return user
+
 def role_required(required_role):
     def decorator(f):
         @wraps(f)
         @jwt_required()
         def decorated_function(*args, **kwargs):
-            current_user_id = get_jwt_identity()
-            session = Session()
-            user = session.query(User).filter_by(id=current_user_id).first()
-            session.close()
+            current_username = get_jwt_identity()
+            user = get_user_by_username(current_username)
             if not user or user.role != required_role:
                 return jsonify({"message": "Access denied"}), 403
             return f(*args, **kwargs)

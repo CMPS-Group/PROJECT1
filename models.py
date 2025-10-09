@@ -19,8 +19,8 @@ class User(Base):
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
 
-class Vehicle(Base):
-    __tablename__ = 'vehicles'
+class Product(Base):
+    __tablename__ = 'products'
     id = Column(Integer, primary_key=True)
     name = Column(String(100), nullable=False)
     description = Column(Text)
@@ -34,11 +34,11 @@ class CartItem(Base):
     __tablename__ = 'cart_items'
     id = Column(Integer, primary_key=True)
     user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
-    vehicle_id = Column(Integer, ForeignKey('vehicles.id'), nullable=False)
+    product_id = Column(Integer, ForeignKey('products.id'), nullable=False)
     quantity = Column(Integer, nullable=False)
 
     user = relationship('User')
-    vehicle = relationship('Vehicle')
+    product = relationship('Product')
 
 class Order(Base):
     __tablename__ = 'orders'
@@ -49,18 +49,18 @@ class Order(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
 
     user = relationship('User')
-    items = relationship('OrderItem')
+    items = relationship('OrderItem', back_populates='order')
 
 class OrderItem(Base):
     __tablename__ = 'order_items'
     id = Column(Integer, primary_key=True)
     order_id = Column(Integer, ForeignKey('orders.id'), nullable=False)
-    vehicle_id = Column(Integer, ForeignKey('vehicles.id'), nullable=False)
+    product_id = Column(Integer, ForeignKey('products.id'), nullable=False)
     quantity = Column(Integer, nullable=False)
     price = Column(Float, nullable=False)
 
-    order = relationship('Order')
-    vehicle = relationship('Vehicle')
+    order = relationship('Order', back_populates='items')
+    product = relationship('Product')
 
 class Discount(Base):
     __tablename__ = 'discounts'
@@ -74,13 +74,13 @@ class Discount(Base):
 class InventoryLog(Base):
     __tablename__ = 'inventory_logs'
     id = Column(Integer, primary_key=True)
-    vehicle_id = Column(Integer, ForeignKey('vehicles.id'), nullable=False)
+    product_id = Column(Integer, ForeignKey('products.id'), nullable=False)
     user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
     old_quantity = Column(Integer, nullable=False)
     new_quantity = Column(Integer, nullable=False)
     timestamp = Column(DateTime, default=datetime.utcnow)
 
-    vehicle = relationship('Vehicle')
+    product = relationship('Product')
     user = relationship('User')
 
 # Database setup

@@ -1,6 +1,7 @@
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from models import Session, Order, User, Discount, InventoryLog, Vehicle
+from sqlalchemy.orm import joinedload
+from models import Session, Order, User, Discount, InventoryLog, Product
 from auth import role_required
 
 admin_bp = Blueprint('admin', __name__)
@@ -86,29 +87,30 @@ def update_user_role(user_id):
 @role_required('admin')
 def view_all_inventory():
     session = Session()
-    vehicles = session.query(Vehicle).all()
+    products = session.query(Product).all()
     session.close()
     return jsonify([{
-        'id': v.id,
-        'name': v.name,
-        'seller_id': v.seller_id,
-        'inventory': v.inventory
-    } for v in vehicles])
+        'id': p.id,
+        'name': p.name,
+        'seller_id': p.seller_id,
+        'inventory': p.inventory
+    } for p in products])
 
 @admin_bp.route('/inventory/logs', methods=['GET'])
 @jwt_required()
 @role_required('admin')
 def view_inventory_logs():
     session = Session()
-    logs = session.query(InventoryLog).order_by(InventoryLog.timestamp.desc()).limit(100).all()
-    session.close()
-    return jsonify([{
+    logs = session.query(InventoryLog).options(joinedload(InventoryLog.product), joinedload(InventoryLog.user)).order_by(InventoryLog.timestamp.desc()).limit(100).all()
+    result = [{
         'id': log.id,
-        'vehicle_id': log.vehicle_id,
-        'vehicle_name': log.vehicle.name,
+        'product_id': log.product_id,
+        'product_name': log.product.name,
         'user_id': log.user_id,
         'username': log.user.username,
         'old_quantity': log.old_quantity,
         'new_quantity': log.new_quantity,
         'timestamp': log.timestamp.isoformat()
-    } for log in logs])
+    } for log in logs]
+    session.close()
+    return jsonify(result)

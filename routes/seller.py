@@ -1,14 +1,14 @@
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from models import Session, Vehicle, InventoryLog, Order, OrderItem
+from models import Session, Product, InventoryLog, Order, OrderItem
 from auth import role_required
 
 seller_bp = Blueprint('seller', __name__)
 
-@seller_bp.route('/vehicles', methods=['POST'])
+@seller_bp.route('/products', methods=['POST'])
 @jwt_required()
 @role_required('seller')
-def add_vehicle():
+def add_product():
     data = request.get_json()
     if not isinstance(data.get('name'), str) or not data['name'].strip() or \
        not isinstance(data.get('price'), (int, float)) or data['price'] <= 0 or \
@@ -16,70 +16,70 @@ def add_vehicle():
         return jsonify({"message": "Invalid input"}), 400
     user_id = get_jwt_identity()
     session = Session()
-    vehicle = Vehicle(
+    product = Product(
         name=data['name'].strip(),
         description=data.get('description', '').strip(),
         price=data['price'],
         inventory=data['inventory'],
         seller_id=user_id
     )
-    session.add(vehicle)
+    session.add(product)
     session.commit()
-    vehicle_id = vehicle.id
+    product_id = product.id
     session.close()
-    return jsonify({"message": "Vehicle added", "vehicle_id": vehicle_id})
+    return jsonify({"message": "Product added", "product_id": product_id})
 
-@seller_bp.route('/vehicles/<int:vehicle_id>', methods=['PUT'])
+@seller_bp.route('/products/<int:product_id>', methods=['PUT'])
 @jwt_required()
 @role_required('seller')
-def edit_vehicle(vehicle_id):
+def edit_product(product_id):
     data = request.get_json()
     user_id = get_jwt_identity()
     session = Session()
-    vehicle = session.query(Vehicle).filter_by(id=vehicle_id, seller_id=user_id).first()
-    if not vehicle:
+    product = session.query(Product).filter_by(id=product_id, seller_id=user_id).first()
+    if not product:
         session.close()
-        return jsonify({"message": "Vehicle not found or access denied"}), 404
-    vehicle.name = data.get('name', vehicle.name)
-    vehicle.description = data.get('description', vehicle.description)
-    vehicle.price = data.get('price', vehicle.price)
-    vehicle.inventory = data.get('inventory', vehicle.inventory)
+        return jsonify({"message": "Product not found or access denied"}), 404
+    product.name = data.get('name', product.name)
+    product.description = data.get('description', product.description)
+    product.price = data.get('price', product.price)
+    product.inventory = data.get('inventory', product.inventory)
     session.commit()
     session.close()
-    return jsonify({"message": "Vehicle updated"})
+    return jsonify({"message": "Product updated"})
 
-@seller_bp.route('/vehicles', methods=['GET'])
+@seller_bp.route('/products', methods=['GET'])
 @jwt_required()
 @role_required('seller')
-def list_vehicles():
+def list_products():
     user_id = get_jwt_identity()
     session = Session()
-    vehicles = session.query(Vehicle).filter_by(seller_id=user_id).all()
+    products = session.query(Product).filter_by(seller_id=user_id).all()
     session.close()
     return jsonify([{
-        'id': v.id,
-        'name': v.name,
-        'description': v.description,
-        'price': v.price,
-        'inventory': v.inventory
-    } for v in vehicles])
+        'id': p.id,
+        'name': p.name,
+        'description': p.description,
+        'price': p.price,
+        'inventory': p.inventory
+    } for p in products])
 
-@seller_bp.route('/vehicles/<int:vehicle_id>/inventory', methods=['PUT'])
+@seller_bp.route('/products/<int:product_id>/inventory', methods=['PUT'])
 @jwt_required()
 @role_required('seller')
-def update_inventory(vehicle_id):
+def update_inventory(product_id):
     data = request.get_json()
     if not isinstance(data.get('inventory'), int) or data['inventory'] < 0:
         return jsonify({"message": "Invalid inventory value"}), 400
     user_id = get_jwt_identity()
     session = Session()
-    vehicle = session.query(Vehicle).filter_by(id=vehicle_id, seller_id=user_id).first()
-    if not vehicle:
+    product = session.query(Product).filter_by(id=product_id, seller_id=user_id).first()
+    if not product:
         session.close()
-        return jsonify({"message": "Vehicle not found or access denied"}), 404
-    old_quantity = vehicle.inventory
-    vehicle.inventory = data['inventory']
-    log = InventoryLog(vehicle_id=vehicle_id, user_id=user_id, old_quantity=old_quantity, new_quantity=data['inventory'])
+        return jsonify({"message": "Product not found or access denied"}), 404
+    old_quantity = product.inventory
+    product.inventory = data['inventory']
+    log = InventoryLog(product_id=product_id, user_id=user_id, old_quantity=old_quantity, new_quantity=data['inventory'])
     session.add(log)
     session.commit()
     session.close()
@@ -92,14 +92,14 @@ def get_low_stock_alerts():
     threshold = request.args.get('threshold', default=10, type=int)
     user_id = get_jwt_identity()
     session = Session()
-    vehicles = session.query(Vehicle).filter(Vehicle.seller_id == user_id, Vehicle.inventory <= threshold).all()
+    products = session.query(Product).filter(Product.seller_id == user_id, Product.inventory <= threshold).all()
     session.close()
     return jsonify([{
-        'id': v.id,
-        'name': v.name,
-        'inventory': v.inventory,
+        'id': p.id,
+        'name': p.name,
+        'inventory': p.inventory,
         'threshold': threshold
-    } for v in vehicles])
+    } for p in products])
 
 @seller_bp.route('/inventory/restock-suggestions', methods=['GET'])
 @jwt_required()
@@ -111,20 +111,20 @@ def get_restock_suggestions():
     from sqlalchemy import func
     from datetime import datetime, timedelta
     thirty_days_ago = datetime.utcnow() - timedelta(days=30)
-    sold_vehicles = session.query(OrderItem.vehicle_id, func.sum(OrderItem.quantity).label('total_sold')).\
+    sold_products = session.query(OrderItem.product_id, func.sum(OrderItem.quantity).label('total_sold')).\
         join(Order).filter(Order.status == 'completed', Order.created_at >= thirty_days_ago).\
-        group_by(OrderItem.vehicle_id).all()
-    sold_vehicle_ids = {v.vehicle_id: v.total_sold for v in sold_vehicles}
-    vehicles = session.query(Vehicle).filter_by(seller_id=user_id).all()
+        group_by(OrderItem.product_id).all()
+    sold_product_ids = {p.product_id: p.total_sold for p in sold_products}
+    products = session.query(Product).filter_by(seller_id=user_id).all()
     suggestions = []
-    for v in vehicles:
-        if v.inventory < 20 and v.id in sold_vehicle_ids:
+    for p in products:
+        if p.inventory < 20 and p.id in sold_product_ids:
             suggestions.append({
-                'id': v.id,
-                'name': v.name,
-                'current_inventory': v.inventory,
-                'suggested_restock': max(50 - v.inventory, 0),  # Suggest to bring to 50
-                'recent_sales': sold_vehicle_ids[v.id]
+                'id': p.id,
+                'name': p.name,
+                'current_inventory': p.inventory,
+                'suggested_restock': max(50 - p.inventory, 0),  # Suggest to bring to 50
+                'recent_sales': sold_product_ids[p.id]
             })
     session.close()
     return jsonify(suggestions)
