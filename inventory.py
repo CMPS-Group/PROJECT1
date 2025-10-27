@@ -1,3 +1,9 @@
+# inventory.py
+""" The inventory module manages the car dealership's inventory, including
+    car management and inventory reporting."""
+
+from car import Car
+
 def levenshtein_distance(s1, s2):
     """Calculates the Levenshtein distance between two strings."""
     if len(s1) < len(s2):
@@ -43,10 +49,18 @@ class Inventory:
                 setattr(car, key, value)
         return f"Car with VIN {vin} updated."
 
-    def list_inventory(self):
+    def list_inventory(self, include_sold=False):
         if not self.cars:
             return "Inventory is empty."
-        return "\n".join(str(car) for car in self.cars.values())
+        
+        car_list = self.cars.values()
+        if not include_sold:
+            car_list = [car for car in car_list if car.status != "Sold"]
+
+        if not car_list:
+            return "No available cars in inventory."
+            
+        return "\n".join(str(car) for car in car_list)
 
     def find_car(self, vin):
         return self.cars.get(vin)
@@ -69,6 +83,16 @@ class Inventory:
                 best_match_car = car
         
         return best_match_car, min_distance
+
+    def filter_by_price_range(self, min_price: float, max_price: float):
+        """Filters available cars by price range."""
+        if min_price > max_price:
+            raise ValueError("Minimum price cannot be greater than maximum price.")
+        
+        return [
+            car for car in self.cars.values() 
+            if car.is_available() and min_price <= car.price <= max_price
+        ]
 
     def find_car_by_make_and_model(self, make, model):
         """Finds cars by make and model."""
