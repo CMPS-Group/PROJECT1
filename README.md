@@ -1,4 +1,4 @@
-# How to run Dealer Management Program.
+# How to run Dealer Management Simulation.
 
 Step 1) Ensure you are running Python 3.12 or a verison that is compatible with Python 3.
 
