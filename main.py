@@ -119,6 +119,9 @@ def handle_browsing(inventory: Inventory, cart: Cart):
                 for car in results: print(car)
             else:
                 print("No cars found matching that make and model.")
+            # Change made here so not the whole menu gets displayed
+            input("\nPress Enter to go back to Filter & Action menu...")  
+
         elif choice == '2':
             min_p = get_valid_price("Enter minimum price: ")
             max_p = get_valid_price("Enter maximum price: ")
@@ -129,6 +132,9 @@ def handle_browsing(inventory: Inventory, cart: Cart):
                     for car in results: print(car)
                 else:
                     print("No cars found in that price range.")
+                # Change made here so not the whole menu gets displayed
+                input("\nPress Enter to go back to Filter & Action menu...")
+
             except ValueError as e:
                 print(f"Error: {e}")
         elif choice == '3':
@@ -138,6 +144,9 @@ def handle_browsing(inventory: Inventory, cart: Cart):
                 cart.add_item(car)
             else:
                 print("Car with that VIN not found.")
+            # Change made here so not the whole menu gets displayed
+            input("\nPress Enter to go back to Filter & Action menu...")
+
         elif choice == '4':
             break
         else:
@@ -182,6 +191,10 @@ def handle_checkout(user: User, cart: Cart, inventory: Inventory) -> bool:
         Notification.send_order_confirmation(user, cart)
         Delivery.schedule()
         print("\nThank you for your purchase!")
+
+
+        input("\nPress Enter to return to the Main Menu...")
+
         return True
     else:
         print("Could not complete purchase due to payment failure.")

@@ -95,5 +95,10 @@ class Inventory:
         ]
 
     def find_car_by_make_and_model(self, make, model):
-        """Finds cars by make and model."""
-        return [car for car in self.cars.values() if car.make.lower() == make.lower() and car.model.lower() == model.lower()]
+        """Finds cars by make and model (case-insensitive and partial match)."""
+        make, model = make.lower(), model.lower()
+        # This part was changes so output can support partial matches 
+        return [
+        car for car in self.cars.values()
+        if make in car.make.lower() and model in car.model.lower()
+    ]
