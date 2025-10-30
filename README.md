@@ -5,7 +5,7 @@ Step 1) Ensure you are running Python 3.12 or a version  that is compatible with
 Step 2) Download or clone the repository with all files. Use a directory you will remember.
 
 Step 3) Using a CMD (Command Prompt/Terminal), ensure you are in the right directory with the files above and launch the app 
-by running main.py ''python3 main.py''. This was tested in Linux Ubuntu 24.1 via WSL 2.
+by running main.py ''python main.py''. This was tested in Linux Ubuntu 24.1 via WSL 2.
 
 Project by Group 3, CMPS 3000 BSA. Fall 2025. 
 This program was designed for terminal program users from the 80s-90s who still want to run a 
